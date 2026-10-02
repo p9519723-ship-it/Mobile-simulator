@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Móviles 2008 · Simulador de empresa</title>
+<style>
+:root{--pcb:#0e2a24;--pcb2:#15382f;--cu:#d08a3e;--si:#cfd6d2;--ink:#e9efe9;--bad:#e5533d;--ok:#6fcf8f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--pcb);color:var(--ink);font:15px/1.45 "Trebuchet MS",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding:12px 16px;background:#0a1d19;border-bottom:2px solid var(--cu)}
+header h1{font-size:18px;margin:0;color:var(--cu)}
+header span b{color:#fff}
+nav{display:flex;gap:6px;padding:10px 16px}
+nav button,.btn{background:var(--pcb2);color:var(--ink);border:1px solid #2f5a4c;padding:8px 14px;border-radius:6px;cursor:pointer;font:inherit}
+nav button.on,.btn.main{background:var(--cu);color:#1a1005;border-color:var(--cu);font-weight:700}
+.btn:hover,nav button:hover{filter:brightness(1.15)}
+main{padding:0 16px 24px;max-width:980px;margin:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:var(--pcb2);border:1px solid #2f5a4c;border-radius:8px;padding:14px}
+.card h2{margin:0 0 10px;font-size:16px;color:var(--cu)}
+label{display:block;margin:8px 0 3px;color:var(--si)}
+select,input[type=number]{width:100%;padding:7px;background:#0a1d19;color:var(--ink);border:1px solid #2f5a4c;border-radius:5px;font:inherit}
+input[type=range]{width:100%;accent-color:var(--cu)}
+.row{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dotted #2f5a4c}
+#log{max-height:180px;overflow:auto;font-size:13px;color:var(--si)}
+#log p{margin:3px 0}
+.hide{display:none}
+canvas{width:100%;max-width:620px;touch-action:none;background:#0a1d19;border-radius:8px;border:1px solid #2f5a4c;display:block;margin:auto;cursor:none}
+.bad{color:var(--bad)}.good{color:var(--ok)}
+small{color:var(--si)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Móviles 2008</h1>
+  <span>Fecha: <b id="date"></b></span>
+  <span>Caja: <b id="cash"></b></span>
+  <span>Marca: <b id="brand"></b>/100</span>
+  <span>Stock: <b id="inv"></b> uds</span>
+</header>
+<nav>
+  <button id="tCo" class="on">Empresa</button>
+  <button id="tCpu">Laboratorio de CPU</button>
+</nav>
+<main>
+<section id="co">
+  <div class="grid">
+    <div class="card">
+      <h2>Diseñar el teléfono</h2>
+      <label>Pantalla</label><select id="screen"></select>
+      <label>Cámara</label><select id="cam"></select>
+      <label>Batería</label><select id="bat"></select>
+      <label>CPU</label><div id="cpuName"></div>
+      <small>Diseña tu propio chip en el Laboratorio de CPU.</small>
+      <label>Precio de venta ($)</label><input type="number" id="price" min="49" max="999" value="199">
+    </div>
+    <div class="card">
+      <h2>Previsión</h2>
+      <div class="row"><span>Coste por unidad</span><b id="ucost"></b></div>
+      <div class="row"><span>Margen por unidad</span><b id="margin"></b></div>
+      <div class="row"><span>Calidad del producto</span><b id="qual"></b></div>
+      <div class="row"><span>Gastos fijos / mes</span><b id="fixed"></b></div>
+      <label>Unidades a fabricar</label>
+      <input type="number" id="units" min="0" step="500" value="2000">
+      <p><button class="btn" id="make">Fabricar</button>
+      <button class="btn main" id="next">Pasar al mes siguiente</button></p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px"><h2>Diario</h2><div id="log"></div></div>
+</section>
+
+<section id="cpu" class="hide">
+  <div class="grid">
+    <div class="card">
+      <h2>Diseño del chip</h2>
+      <label>Núcleos: <b id="vCores"></b></label><input type="range" id="cores" min="1" max="8" value="1">
+      <label>Frecuencia: <b id="vGhz"></b> GHz</label><input type="range" id="ghz" min="0.2" max="3" step="0.1" value="0.5">
+      <label>Bloques de caché: <b id="vCache"></b></label><input type="range" id="cache" min="0" max="4" value="1">
+      <label>Herramienta</label>
+      <p><button class="btn main" id="toolT">Pinzas (mover)</button>
+      <button class="btn" id="toolS">Sabotear</button></p>
+      <small>Pinzas: arrastra núcleos y caché por el chip. Sabotear: toca un pin para doblarlo o un núcleo para romperlo.</small>
+      <p><button class="btn" id="repair">Rehacer chip</button></p>
+    </div>
+    <div class="card">
+      <h2>Resultado</h2>
+      <div class="row"><span>Rendimiento</span><b id="rPerf"></b></div>
+      <div class="row"><span>Calor (W)</span><b id="rHeat"></b></div>
+      <div class="row"><span>Pines sanos</span><b id="rPins"></b></div>
+      <div class="row"><span>Núcleos activos</span><b id="rLive"></b></div>
+      <div class="row"><span>Solapes</span><b id="rOver"></b></div>
+      <div class="row"><span>Coste por chip</span><b id="rCost"></b></div>
+      <div id="rState" style="margin:8px 0"></div>
+      <button class="btn main" id="ship">Usar este chip en mi móvil</button>
+    </div>
+  </div>
+  <p><canvas id="cv" width="600" height="600"></canvas></p>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>"$"+Math.round(n).toLocaleString("es-ES");
+const SCREENS=[{n:'2.4" QVGA',c:18,q:1},{n:'3.0" WQVGA',c:30,q:2},{n:'3.5" táctil HVGA',c:55,q:4}];
+const CAMS=[{n:'2 MP',c:8,q:1},{n:'3.2 MP',c:14,q:2},{n:'5 MP',c:25,q:3}];
+const BATS=[{n:'900 mAh',c:6,q:1},{n:'1200 mAh',c:9,q:2},{n:'1500 mAh',c:13,q:3}];
+const MONTHS=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const FIXED=38000, ASSEMBLY=15;
+const S={cash:1500000,y:2008,m:0,brand:5,inv:0,cpu:{name:"ARM genérico 0,5 GHz",perf:4,cost:12},over:0};
+
+// ---------- Empresa ----------
+function fill(id,arr){$(id).innerHTML=arr.map((p,i)=>`<option value="${i}">${p.n} (${fmt(p.c)})</option>`).join("")}
+fill("screen",SCREENS);fill("cam",CAMS);fill("bat",BATS);
+["screen","cam","bat","price"].forEach(i=>$(i).addEventListener("input",ui));
+function phone(){
+  const s=SCREENS[$("screen").value],c=CAMS[$("cam").value],b=BATS[$("bat").value];
+  const cost=s.c+c.c+b.c+S.cpu.cost+ASSEMBLY;
+  const q=s.q+c.q+b.q+S.cpu.perf/3;
+  return{cost,q,price:Math.max(49,+$("price").value||199)};
+}
+function log(t,cls){const p=document.createElement("p");p.textContent=t;if(cls)p.className=cls;$("log").prepend(p)}
+function ui(){
+  const p=phone();
+  $("date").textContent=MONTHS[S.m]+" "+S.y;
+  $("cash").textContent=fmt(S.cash);$("cash").className=S.cash<0?"bad":"";
+  $("brand").textContent=Math.round(S.brand);$("inv").textContent=S.inv.toLocaleString("es-ES");
+  $("cpuName").textContent=S.cpu.name+" · rend. "+S.cpu.perf.toFixed(1);
+  $("ucost").textContent=fmt(p.cost);
+  $("margin").textContent=fmt(p.price-p.cost);$("margin").className=p.price<p.cost?"bad":"good";
+  $("qual").textContent=p.q.toFixed(1)+" / 13";
+  $("fixed").textContent=fmt(FIXED);
+}
+$("make").onclick=()=>{
+  const n=Math.max(0,Math.floor(+$("units").value||0)),p=phone(),cost=n*p.cost;
+  if(!n)return;
+  if(cost>S.cash){log("No tienes caja para fabricar "+n+" unidades ("+fmt(cost)+").","bad");return}
+  S.cash-=cost;S.inv+=n;log("Fabricadas "+n+" unidades por "+fmt(cost)+".");ui();
+};
+$("next").onclick=()=>{
+  if(S.cash<-100000){return}
+  const p=phone();
+  const demand=Math.round(900*Math.pow(p.q/8,2)*(1+S.brand/40)*Math.pow(250/p.price,1.6)*(0.8+Math.random()*0.4));
+  const sold=Math.min(demand,S.inv);
+  S.inv-=sold;S.cash+=sold*p.price-FIXED;
+  S.brand=Math.max(1,Math.min(100,S.brand+(sold/400)*(p.q/8)-0.3));
+  log(MONTHS[S.m]+" "+S.y+": demanda "+demand+", vendidas "+sold+", ingresos "+fmt(sold*p.price)+", gastos fijos "+fmt(FIXED)+".", sold<demand?"bad":"");
+  if(sold<demand)log("Perdiste "+(demand-sold)+" ventas por falta de stock.","bad");
+  if(++S.m>11){S.m=0;S.y++;log("Empieza "+S.y+". Los clientes esperan más calidad.")}
+  ui();
+  if(S.cash<-100000){log("Quiebra: la caja bajó de -100.000 $. Recarga la página para empezar otra empresa.","bad");$("next").disabled=true}
+};
+log("Enero 2008: fundas la empresa con 1.500.000 $ de capital. Fabrica, vende y no te quedes sin caja.");
+ui();
+
+// ---------- Pestañas ----------
+$("tCo").onclick=()=>{$("co").classList.remove("hide");$("cpu").classList.add("hide");$("tCo").classList.add("on");$("tCpu").classList.remove("on")};
+$("tCpu").onclick=()=>{$("cpu").classList.remove("hide");$("co").classList.add("hide");$("tCpu").classList.add("on");$("tCo").classList.remove("on");draw()};
+
+// ---------- Laboratorio de CPU ----------
+const cv=$("cv"),g=cv.getContext("2d");
+const PK=[80,520],DIE=[135,465];
+let blocks=[],pins=[],tool="T",mouse={x:300,y:300},grab=null,off={x:0,y:0};
+function mkPins(){
+  pins=[];const n=12,step=(PK[1]-PK[0]-40)/(n-1);
+  for(let i=0;i<n;i++){const t=PK[0]+20+i*step;
+    pins.push({x:t,y:PK[0]-14,ok:true},{x:t,y:PK[1]+14,ok:true},{x:PK[0]-14,y:t,ok:true},{x:PK[1]+14,y:t,ok:true});}
+}
+function sync(){
+  const nc=+$("cores").value,nk=+$("cache").value;
+  const want=(t,n)=>{let a=blocks.filter(b=>b.t==t);
+    while(a.length>n){blocks.splice(blocks.indexOf(a.pop()),1)}
+    while(a.length<n){const i=a.length;
+      const b=t=="core"?{t,w:70,h:70,x:DIE[0]+8+(i%4)*84,y:DIE[0]+8+Math.floor(i/4)*84,ok:true}
+                        :{t,w:70,h:34,x:DIE[0]+8+(i%4)*84,y:DIE[1]-44,ok:true};
+      blocks.push(b);a.push(b)}};
+  want("core",nc);want("cache",nk);
+}
+function overlaps(){let o=0;for(let i=0;i<blocks.length;i++)for(let j=i+1;j<blocks.length;j++){
+  const a=blocks[i],b=blocks[j];
+  if(a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h)o++}return o}
+function stats(){
+  const live=blocks.filter(b=>b.t=="core"&&b.ok).length;
+  const cache=blocks.filter(b=>b.t=="cache"&&b.ok).length;
+  const ghz=+$("ghz").value,okp=pins.filter(p=>p.ok).length,pf=okp/pins.length;
+  const over=overlaps(),eff=Math.max(0.3,1-0.15*over);
+  const heat=live*ghz*ghz*9+cache*2;
+  const boots=pf>=0.75&&live>0;
+  let perf=boots?Math.pow(live,0.85)*ghz*8*(1+0.1*cache)*eff*(heat>95?0.5:1)*(0.5+0.5*((pf-0.75)/0.25)):0;
+  const cost=5+(+$("cores").value)*3+ghz*4+(+$("cache").value)*2;
+  return{live,ghz,okp,pf,over,heat,boots,perf,cost,cache};
+}
+function draw(){
+  const s=stats();
+  $("vCores").textContent=$("cores").value;$("vGhz").textContent=(+$("ghz").value).toFixed(1);$("vCache").textContent=$("cache").value;
+  $("rPerf").textContent=s.perf.toFixed(1);
+  $("rHeat").textContent=s.heat.toFixed(0);$("rHeat").className=s.heat>95?"bad":"";
+  $("rPins").textContent=s.okp+" / "+pins.length;$("rPins").className=s.pf<0.75?"bad":"";
+  $("rLive").textContent=s.live+" / "+$("cores").value;
+  $("rOver").textContent=s.over;
+  $("rCost").textContent=fmt(s.cost);
+  $("rState").innerHTML=!s.boots?'<span class="bad">El chip no arranca: necesita al menos el 75 % de pines y un núcleo sano.</span>':
+    s.heat>95?'<span class="bad">Sobrecalentamiento: el rendimiento cae a la mitad.</span>':'<span class="good">El chip arranca correctamente.</span>';
+  g.clearRect(0,0,600,600);
+  g.fillStyle="#1d4a3d";g.fillRect(PK[0],PK[0],PK[1]-PK[0],PK[1]-PK[0]);
+  g.strokeStyle="#2f5a4c";g.lineWidth=2;g.strokeRect(PK[0],PK[0],PK[1]-PK[0],PK[1]-PK[0]);
+  g.fillStyle="#3b4a47";g.fillRect(DIE[0],DIE[0],DIE[1]-DIE[0],DIE[1]-DIE[0]);
+  g.strokeStyle="#7d908a";g.strokeRect(DIE[0],DIE[0],DIE[1]-DIE[0],DIE[1]-DIE[0]);
+  for(const p of pins){
+    g.save();g.translate(p.x,p.y);
+    if(p.ok){g.fillStyle="#d08a3e";g.fillRect(-4,-9,8,18)}
+    else{g.rotate(0.9);g.fillStyle="#e5533d";g.fillRect(-4,-4,8,9)}
+    g.restore();
+  }
+  for(const b of blocks){
+    g.fillStyle=!b.ok?"#5b2a22":b.t=="core"?"#d08a3e":"#6fa8c9";
+    g.fillRect(b.x,b.y,b.w,b.h);
+    g.strokeStyle="#111";g.strokeRect(b.x,b.y,b.w,b.h);
+    g.fillStyle="#111";g.font="13px sans-serif";g.fillText(b.ok?(b.t=="core"?"Núcleo":"Caché"):"Roto",b.x+8,b.y+20);
+    if(!b.ok){g.strokeStyle="#e5533d";g.beginPath();g.moveTo(b.x+6,b.y+b.h-6);g.lineTo(b.x+b.w/2,b.y+b.h/2);g.lineTo(b.x+b.w-6,b.y+8);g.stroke()}
+  }
+  // herramienta
+  g.save();g.translate(mouse.x,mouse.y);g.strokeStyle=tool=="T"?"#e9efe9":"#e5533d";g.lineWidth=3;
+  const open=grab?4:10;
+  g.beginPath();g.moveTo(-open,0);g.lineTo(-2,-8);g.lineTo(-18,-60);g.moveTo(open,0);g.lineTo(2,-8);g.lineTo(18,-60);g.stroke();
+  g.restore();
+}
+function pos(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*600/r.width,y:(e.clientY-r.top)*600/r.height}}
+cv.addEventListener("pointerdown",e=>{
+  cv.setPointerCapture(e.pointerId);mouse=pos(e);
+  if(tool=="T"){
+    for(let i=blocks.length-1;i>=0;i--){const b=blocks[i];
+      if(mouse.x>=b.x&&mouse.x<=b.x+b.w&&mouse.y>=b.y&&mouse.y<=b.y+b.h){grab=b;off={x:mouse.x-b.x,y:mouse.y-b.y};blocks.push(blocks.splice(i,1)[0]);break}}
+  }else{
+    const p=pins.find(p=>p.ok&&Math.hypot(p.x-mouse.x,p.y-mouse.y)<12);
+    if(p)p.ok=false;
+    else for(const b of blocks){if(b.ok&&mouse.x>=b.x&&mouse.x<=b.x+b.w&&mouse.y>=b.y&&mouse.y<=b.y+b.h){b.ok=false;break}}
+  }
+  draw();
+});
+cv.addEventListener("pointermove",e=>{
+  mouse=pos(e);
+  if(grab){grab.x=Math.max(DIE[0],Math.min(DIE[1]-grab.w,mouse.x-off.x));grab.y=Math.max(DIE[0],Math.min(DIE[1]-grab.h,mouse.y-off.y))}
+  draw();
+});
+cv.addEventListener("pointerup",()=>{grab=null;draw()});
+["cores","ghz","cache"].forEach(i=>$(i).addEventListener("input",()=>{sync();draw()}));
+function setTool(t){tool=t;$("toolT").className="btn"+(t=="T"?" main":"");$("toolS").className="btn"+(t=="S"?" main":"")}
+$("toolT").onclick=()=>setTool("T");$("toolS").onclick=()=>setTool("S");
+$("repair").onclick=()=>{blocks=[];mkPins();sync();draw()};
+$("ship").onclick=()=>{
+  const s=stats();
+  if(!s.boots){alert("Este chip no arranca. Arréglalo antes de usarlo.");return}
+  S.cpu={name:`CPU ${$("cores").value} núcleo(s) a ${s.ghz.toFixed(1)} GHz`,perf:s.perf,cost:s.cost};
+  log("Nuevo chip propio: "+S.cpu.name+", rendimiento "+s.perf.toFixed(1)+", coste "+fmt(s.cost)+" por unidad.","good");
+  ui();$("tCo").click();
+};
+mkPins();sync();draw();
+</script>
+</body>
+</html>
